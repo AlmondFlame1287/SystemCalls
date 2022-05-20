@@ -10,7 +10,7 @@ FILE *fp;
 sem_t mutex;
 int count = 0;
 
-void lavoro() {
+void parte1() {
     sem_wait(&mutex);
 
     // Apri il file figli.dat in append+read mode
@@ -29,6 +29,27 @@ void lavoro() {
     sem_post(&mutex);
 }
 
+
+void parte2() {
+    sem_wait(&mutex);
+
+    int pid_order[3];
+
+    // Apri il file figli.dat in append+read mode
+    fp = fopen("./figli.dat", "a+r");
+
+    for (int i = 0; i < 3; i++)
+    {
+        fscanf(fp, "%d %d", NULL, &pid_order[i]);   
+
+        // debugging
+        printf("pid_order[%d] = %d", i, pid_order[i]);
+    }
+    
+
+    sem_post(&mutex);
+}
+
 int main() {
     // inizializza il semaforo
     sem_init(&mutex, 0, 1);
@@ -40,17 +61,31 @@ int main() {
         pids[i] = fork();
 
         if (pids[i] == 0)
-            lavoro();
-        else if(pids[i] > 0)
+            parte1();
+        else if(pids[i] > 0) {
             kill(pids[i], SIGUSR1);
-            break;
+            break;            
+        }
+
+        // attendi figli
+        waitpid(pids[i], NULL, 0);
+
     }
 
-    // attendi figli
+    // for (int i = 0; i < 3; i++)
+    // {
+    // }
+
     for (int i = 0; i < 3; i++)
     {
-        waitpid(pids[i], NULL, 0);
+        pids[i] = fork(); 
+
+        if(pids[i] == 0)
+            parte1();
+        else if(pids[i] > 0)
+            break;
     }
+    
     
     // distruggi il semaforo quando finito
     sem_destroy(&mutex);
