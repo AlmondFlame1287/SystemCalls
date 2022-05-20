@@ -4,50 +4,42 @@
 #include <pthread.h>
 #include <semaphore.h>
 
+FILE *fp;
 sem_t mutex;
+int count = 0;
 
-void* lavoro() {
+void lavoro() {
     sem_wait(&mutex);
 
-    FILE* fp = fopen("./figli.dat", "w+");
-    fprintf(fp, "%d", getpid());
+    fp = fopen("./figli.dat", "a+r");
+    fprintf(fp, "%d %d", getpid(), count);
     fprintf(fp, "\n");
     fclose(fp);
+
+    count++;
 
     sem_post(&mutex);
 }
 
-
 int main() {
-    // Crea figli
+    // inizializza il semaforo
     sem_init(&mutex, 0, 1);
+    
+    pid_t pids[3];
 
-    pthread_t threads[3];
+    // crea figli    
+    for (int i = 0; i < 3; i++) {
+        pids[i] = fork();
 
-    for (int i = 0; i < 3; i++)
-    {
-        pthread_create(&threads[i], NULL, &lavoro, NULL);
-        // sleep(2);
-        pthread_join(threads[i], NULL);
+        if (pids[i] == 0)
+            lavoro();
+        else if(pids[i] > 0)
+            break;
     }
-    
+
+    // attendi figli
+    for (int i = 0; i < 3; i++)
+
+    // distruggi il semaforo quando finito
     sem_destroy(&mutex);
-    // pthread_t t1;
-    // pthread_create(&t1, NULL, &lavoro, NULL);
-    
-    // pthread_join(t1, NULL);
-
-    // int n;
-
-    // FILE* f = fopen("./figli.dat", "w+");
-
-    // if(f == NULL) {
-    //     printf("ERRORE");
-    //     exit(1);
-    // }
-    
-    // printf("Dammi un numero ");
-    // scanf("%d", &n);
-    // fprintf(f, "%d", n);
-    // fclose(f);
 }
