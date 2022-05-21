@@ -1,92 +1,69 @@
-#include <stdlib.h>
-#include <unistd.h>
 #include <stdio.h>
-#include <pthread.h>
+#include <stdlib.h>
 #include <semaphore.h>
-#include <sys/wait.h>
-#include <signal.h>
+#include <pthread.h>
+#include <unistd.h>
+#include <sys/types.h>
+#include <syscall.h>
+#include <wait.h>
 
-FILE *fp;
-sem_t mutex;
-int count = 0;
+FILE* file;
 
-void parte1() {
-    sem_wait(&mutex);
+void sig_handler(int signal_number);
 
-    // Apri il file figli.dat in append+read mode
-    fp = fopen("./figli.dat", "a+r");
-
-    // Aggiungi il pid del figlio e l'ordine di creazione
-    fprintf(fp, "%d %d", getpid(), count);
-    fprintf(fp, "\n");
-
-    // Chiudi il file
-    fclose(fp);
-
-    // Variabile d'ordine per i figli
-    count++;
-
-    sem_post(&mutex);
-}
-
-
-void parte2() {
-    sem_wait(&mutex);
-
-    int pid_order[3];
-
-    // Apri il file figli.dat in append+read mode
-    fp = fopen("./figli.dat", "a+r");
-
-    for (int i = 0; i < 3; i++)
-    {
-        fscanf(fp, "%d %d", NULL, &pid_order[i]);   
-
-        // debugging
-        printf("pid_order[%d] = %d", i, pid_order[i]);
-    }
-    
-
-    sem_post(&mutex);
-}
 
 int main() {
-    // inizializza il semaforo
-    sem_init(&mutex, 0, 1);
-    
-    pid_t pids[3];
+    pid_t figli[3];
 
-    // crea figli    
-    for (int i = 0; i < 3; i++) {
-        pids[i] = fork();
+    file = fopen("file.dat", "w+");
 
-        if (pids[i] == 0)
-            parte1();
-        else if(pids[i] > 0) {
-            kill(pids[i], SIGUSR1);
-            break;            
+    figli[0] = fork();    
+
+    if (figli[0] == 0) {
+        // figlio1
+        printf("PRIMO FIGLIO [%d]\n", getpid());
+        sleep(3);
+    } else if(figli[0] > 0) {
+        // padre
+        figli[1] = fork();
+        if(figli[1] == 0) {
+            printf("SECONDO FIGLIO [%d]\n", getpid());
+            // figlio2
+            sleep(3);
+        } else if(figli[1] > 0) {
+            // padre
+            figli[2] = fork();
+            if (figli[2] == 0) {
+                // figlio3
+                printf("TERZO FIGLIO [%d]\n", getpid());
+                sleep(3);
+            } else if(figli[2] > 0) {
+                // padre
+                fprintf(file, "%d %d, %d %d, %d, %d", figli[0], 1, figli[1], 2, figli[2], 3);
+                sleep(3);
+
+                for (int i = 0; i < 3; i++) {
+                    signal(SIGUSR1, sig_handler);
+                }
+                             
+            }
         }
-
-        // attendi figli
-        waitpid(pids[i], NULL, 0);
-
+    } else {
+        perror("Error");
+        exit(1);
     }
 
-    // for (int i = 0; i < 3; i++)
-    // {
-    // }
+    fclose(file);
 
-    for (int i = 0; i < 3; i++)
-    {
-        pids[i] = fork(); 
-
-        if(pids[i] == 0)
-            parte1();
-        else if(pids[i] > 0)
-            break;
-    }
-    
-    
-    // distruggi il semaforo quando finito
-    sem_destroy(&mutex);
+    return 0;
 }
+
+void sig_handler(int signal_number) {
+    if(signal_number == SIGUSR1){
+        char* parmList[] = {"void", NULL};
+        char* envList[] = {NULL};
+
+        execve("./afterexec", parmList, envList);
+    }
+}
+
