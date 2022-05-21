@@ -9,11 +9,13 @@
 
 FILE* file;
 
-void sig_handler(int signal_number);
+void signal_handler(int);
 
 
 int main() {
     pid_t figli[3];
+    signal(SIGUSR1, signal_handler);
+
 
     file = fopen("file.dat", "w+");
 
@@ -39,13 +41,15 @@ int main() {
                 sleep(3);
             } else if(figli[2] > 0) {
                 // padre
-                fprintf(file, "%d %d, %d %d, %d, %d", figli[0], 1, figli[1], 2, figli[2], 3);
+                fprintf(file, "%d %d, %d %d, %d %d", figli[0], 1, figli[1], 2, figli[2], 3);
                 sleep(3);
 
-                for (int i = 0; i < 3; i++) {
-                    signal(SIGUSR1, sig_handler);
+                for (int i = 0; i < 3; i++)
+                {
+                    kill(figli[i], SIGUSR1);
+                    sleep(1);
                 }
-                             
+                
             }
         }
     } else {
@@ -55,15 +59,17 @@ int main() {
 
     fclose(file);
 
-    return 0;
+    return EXIT_SUCCESS;
 }
 
-void sig_handler(int signal_number) {
+void signal_handler(int signal_number) {
+    printf("part1");
+
     if(signal_number == SIGUSR1){
         char* parmList[] = {"void", NULL};
-        char* envList[] = {NULL};
+        char* envList[] = {"./afterexec", NULL};
 
-        execve("./afterexec", parmList, envList);
+        execv("./afterexec", envList);
     }
 }
 
