@@ -1,2 +1,3 @@
-main.o:
-	gcc main.c -pthread -o main
+main:
+	gcc main.c -o main -pthread -g
+	gcc afterexec.c -o afterexec -pthread -g
