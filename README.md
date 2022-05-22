@@ -21,9 +21,9 @@ Scrivere un programma in <b>C</b> che effettua le seguenti attivita':
         -[x] Nel nuovo codice i processi figlio leggono dal file figli.dat il proprio ordine di creazione;
     </li>
     <li>
-        -[] Il secondo ed il terzo figlio inviano un segnale <b>SIGURS2</b> al primo figlio;
+        -[x] Il secondo ed il terzo figlio inviano un segnale <b>SIGURS2</b> al primo figlio;
     </li>
     <li>
-        -[] L'ultimo figlio attende tutti i segnali dei fratelli e termina.
+        -[x] L'ultimo figlio attende tutti i segnali dei fratelli e termina.
     </li>
 </ul>
