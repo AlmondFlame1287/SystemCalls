@@ -28,9 +28,7 @@ int main(int argc, char *argv[]) {
     struct pid_info info;
     signal(SIGUSR2, signal_handler);
 
-
     fp = fopen("file.dat", "r");
-
 
     if(fp == NULL) {
         perror("couldn't read file");
@@ -42,17 +40,13 @@ int main(int argc, char *argv[]) {
     fscanf(fp, "%d %d, %d %d, %d %d", &info.pid[0], &info.num[0], &info.pid[1], &info.num[1], &info.pid[2], &info.num[2]);
     fclose(fp);
 
-    for (int i = 0; i < 3; i++) {
-        printf("Sono figlio %d e il mio numero e' %d\n", info.pid[i], info.num[i]);
-    }
-
     if(getpid() == info.pid[2] || getpid() == info.pid[1]) {
-            kill(info.pid[0], SIGUSR2);
-            sleep(1);
+        printf("Siamo processi 3 e 2");
+        kill(info.pid[0], SIGUSR2);
+        sleep(1);
     } else {
-        sleep(10);
+        wait(NULL);
     }
-
 
     sem_post(&sem);
 
